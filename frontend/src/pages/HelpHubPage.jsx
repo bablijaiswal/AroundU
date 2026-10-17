@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import HelpCard from '../components/HelpCard';
 import Button from '../components/Button';
@@ -8,6 +8,8 @@ import { fetchHelp } from '../services/help';
 export default function HelpHubPage() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const flashMessage = location.state?.flashMessage || '';
 
   useEffect(() => {
     let mounted = true;
@@ -36,6 +38,8 @@ export default function HelpHubPage() {
           </Link>
         </div>
       </div>
+
+      {flashMessage && <p className="muted-text">{flashMessage}</p>}
 
       {loading ? (
         <p>Loading…</p>

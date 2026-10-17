@@ -142,6 +142,13 @@
   border-bottom-right-radius: 8px;
 }
 
+.assistant-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-word;
+}
+
 .assistant-speak {
   border: 1px solid rgba(117, 89, 66, 0.12);
   background: rgba(255,255,255,0.4);
@@ -247,17 +254,43 @@
 .assistant-send {
   border: 0;
   border-radius: 12px;
-  width: 44px;
+  min-width: 44px;
   height: 44px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #b6805d, #8d5b3f);
   color: #fff;
   font-size: 1.1rem;
   cursor: pointer;
   box-shadow: 0 12px 22px rgba(123, 79, 58, 0.2);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+}
+
+.assistant-send:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 26px rgba(123, 79, 58, 0.24);
+}
+
+.assistant-send:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow: 0 10px 18px rgba(123, 79, 58, 0.18);
+}
+
+.assistant-send:focus-visible {
+  outline: 2px solid rgba(141, 91, 63, 0.35);
+  outline-offset: 2px;
+}
+
+.assistant-send--sending {
+  min-width: 104px;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
 }
 
 .assistant-send:disabled {
-  opacity: 0.75;
+  opacity: 0.82;
   cursor: default;
 }
 

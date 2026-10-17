@@ -3,8 +3,9 @@ import mongoose from 'mongoose';
 const helpRequestSchema = new mongoose.Schema(
   {
     creator: { type: String, default: '' },
-    creatorId: { type: String, required: true },
+    creatorId: { type: String, required: true, index: true },
     creatorName: { type: String, default: '' },
+    creatorAvatar: { type: String, default: '' },
     type: { type: String, enum: ['need_help', 'can_help'], required: true },
     title: { type: String, required: true },
     description: { type: String, default: '' },

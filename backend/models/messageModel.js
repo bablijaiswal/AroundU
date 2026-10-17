@@ -2,13 +2,17 @@ import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema(
   {
-    sender: { type: String, required: true },
-    receiver: { type: String, required: true },
+    senderId: { type: String, required: true, index: true },
+    receiverId: { type: String, required: true, index: true },
+    senderName: { type: String, default: '' },
+    receiverName: { type: String, default: '' },
+    sender: { type: String, default: '' },
+    receiver: { type: String, default: '' },
     text: { type: String, required: true, trim: true },
     conversationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Conversation',
-      default: null,
+      required: true,
     },
     relatedPost: { type: String, default: null },
     relatedModel: {
@@ -24,6 +28,8 @@ const messageSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+messageSchema.index({ conversationId: 1, createdAt: 1 });
 
 const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
 export default Message;

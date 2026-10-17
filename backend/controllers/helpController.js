@@ -1,26 +1,38 @@
 import HelpRequest from '../models/helpRequestModel.js';
 import User from '../models/userModel.js';
 
-function normalizeHelpDisplay(item) {
+async function normalizeHelpDisplay(item) {
   if (!item) return item;
 
   const rawCreator = item.creatorId || item.creator;
-  if (item.creatorName) {
-    item.creator = item.creatorName;
-    return item;
-  }
+  let user = null;
 
   if (rawCreator && /^[a-fA-F0-9]{24}$/.test(String(rawCreator))) {
-    return User.findById(rawCreator).then((user) => {
-      if (user) {
-        item.creatorName = user.name;
-        item.creator = user.name;
-      }
-      return item;
-    });
+    user = await User.findById(rawCreator).select('name profileImage').lean();
   }
 
-  return Promise.resolve(item);
+  if (!user && rawCreator) {
+    user = await User.findOne({
+      $or: [
+        { firebaseUid: String(rawCreator) },
+        { name: String(rawCreator) },
+        { email: String(rawCreator).toLowerCase() },
+      ],
+    }).select('name profileImage').lean();
+  }
+
+  if (user) {
+    item.creatorId = item.creatorId || user._id.toString();
+    item.creatorName = user.name || item.creatorName || user.email?.split('@')[0];
+    item.creator = item.creatorName;
+    item.creatorAvatar = user.profileImage || item.creatorAvatar || '';
+  } else {
+    item.creatorName = item.creatorName || item.creator || 'Community Member';
+    item.creator = item.creatorName;
+    item.creatorAvatar = item.creatorAvatar || '';
+  }
+
+  return item;
 }
 
 // GET /api/help
@@ -58,6 +70,7 @@ export async function createHelp(req, res, next) {
   try {
     const userId = req.user?.id || req.body.creatorId;
     const creatorName = req.user?.name || req.body.creatorName || 'Community Member';
+    const creatorAvatar = req.user?.profileImage || '';
     if (!userId) return res.status(401).json({ success: false, message: 'Authentication required.' });
 
     const payload = {
@@ -65,6 +78,7 @@ export async function createHelp(req, res, next) {
       creator: creatorName,
       creatorId: userId,
       creatorName,
+      creatorAvatar,
     };
 
     delete payload._id;

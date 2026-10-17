@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import admin from 'firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
 
 let initialized = false;
 
@@ -37,16 +38,27 @@ export function initializeFirebaseAdmin() {
     throw new Error('Firebase Admin credential factory is unavailable in this runtime.');
   }
 
-  admin.initializeApp({
+  const app = admin.initializeApp({
     credential: certFactory(serviceAccount),
     projectId: serviceAccount.project_id || process.env.FIREBASE_PROJECT_ID,
   });
 
   initialized = true;
-  return admin.getApp();
+  return app;
+}
+
+export function getFirebaseAuth() {
+  const app = initializeFirebaseAdmin();
+  if (typeof getAuth === 'function') {
+    return getAuth(app);
+  }
+  if (typeof app.auth === 'function') {
+    return app.auth();
+  }
+  return admin.auth();
 }
 
 export async function verifyFirebaseToken(token) {
-  const app = initializeFirebaseAdmin();
-  return app.auth().verifyIdToken(token);
+  const auth = getFirebaseAuth();
+  return auth.verifyIdToken(token);
 }

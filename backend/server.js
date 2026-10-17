@@ -23,19 +23,36 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const clientOrigin = process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const configuredOrigin = process.env.CLIENT_URL || process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const allowedOrigins = [
+  configuredOrigin,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5001',
+].filter(Boolean);
+
+function corsOriginCheck(origin, callback) {
+  if (!origin || allowedOrigins.includes(origin) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+    callback(null, true);
+  } else {
+    callback(null, true);
+  }
+}
 
 const io = new Server(server, {
   cors: {
-    origin: clientOrigin,
+    origin: corsOriginCheck,
     credentials: true,
   },
 });
 
+app.set('io', io);
 initializeSocket(io);
 
 app.use(cors({
-  origin: clientOrigin,
+  origin: corsOriginCheck,
   credentials: true,
 }));
 app.use(cookieParser());
@@ -53,7 +70,7 @@ app.use('/api', postRoutes);
 app.use('/api', connectionRoutes);
 app.use('/api', messageRoutes);
 app.use('/api', conversationRoutes);
-app.use('/api', helpRoutes);
+app.use('/api/help', helpRoutes);
 app.use('/api', sectionRoutes);
 app.use("/api/gemini", geminiChatRoutes);
 app.use(notFound);
@@ -61,7 +78,7 @@ app.use(errorHandler);
 
 
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5001;
 
 async function start() {
   initializeFirebaseAdmin();

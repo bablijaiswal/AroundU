@@ -2,9 +2,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import Button from '../components/Button';
 import { createHelp } from '../services/help';
+import { useAuth } from '../context/AuthContext';
+import { requireAuth } from '../utils/authGuard';
 
 export default function CreateHelpRequestPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
@@ -13,17 +16,22 @@ export default function CreateHelpRequestPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!requireAuth({ user, navigate, location: { pathname: '/create-help-request', search: '' } })) return;
     setSaving(true);
 
     try {
-      await createHelp({
+      const response = await createHelp({
         title,
         location,
         description,
         category,
         type: 'need_help',
       });
-      navigate('/help-hub');
+      navigate('/help-hub', {
+        state: {
+          flashMessage: response?.data?.title ? `Help request "${response.data.title}" created.` : 'Help request created.',
+        },
+      });
     } catch (err) {
       console.error('Failed to create help request', err);
     } finally {

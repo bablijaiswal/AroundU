@@ -33,6 +33,24 @@ const featureList = [
   { icon: '👤', label: 'Profile', text: 'Managing your profile', accent: 'lavender' },
 ];
 
+function renderAssistantText(text) {
+  const value = String(text || '');
+  const urlPattern = /(https?:\/\/[^\s]+)/g;
+  const parts = value.split(urlPattern);
+
+  return parts.map((part, index) => {
+    if (part.startsWith('http://') || part.startsWith('https://')) {
+      return (
+        <a key={`${part}-${index}`} href={part} target="_blank" rel="noreferrer" className="assistant-link">
+          {part}
+        </a>
+      );
+    }
+
+    return <span key={`${part}-${index}`}>{part}</span>;
+  });
+}
+
 export default function AroundUAssistant({ open, onClose }) {
   const [messages, setMessages] = useState(initialMessages);
   const [draft, setDraft] = useState('');
@@ -203,7 +221,7 @@ export default function AroundUAssistant({ open, onClose }) {
                 {message.sender === 'assistant' && <div className="assistant-avatar">✦</div>}
                 <div className={`assistant-message-stack ${message.sender === 'user' ? 'assistant-message-stack--user' : ''}`}>
                   <div className={`assistant-bubble ${message.sender === 'user' ? 'assistant-bubble--user' : 'assistant-bubble--assistant'}`}>
-                    {message.text}
+                    {renderAssistantText(message.text)}
                   </div>
                   {message.sender === 'assistant' && (
                     <button
@@ -252,7 +270,12 @@ export default function AroundUAssistant({ open, onClose }) {
               🎤
             </button>
             {isListening && <span className="assistant-listening">Listening...</span>}
-            <button type="button" className="assistant-send" onClick={() => sendMessage()} disabled={isSending}>
+            <button
+              type="button"
+              className={`assistant-send ${isSending ? 'assistant-send--sending' : ''}`}
+              onClick={() => sendMessage()}
+              disabled={isSending}
+            >
               {isSending ? 'Sending...' : '➤'}
             </button>
           </div>

@@ -3,8 +3,9 @@ import mongoose from 'mongoose';
 const postSchema = new mongoose.Schema(
   {
     creator: { type: String, default: '' },
-    creatorId: { type: String, required: true },
+    creatorId: { type: String, required: true, index: true },
     creatorName: { type: String, default: '' },
+    creatorAvatar: { type: String, default: '' },
     type: { type: String, default: 'post' },
     title: { type: String, required: true },
     description: { type: String, default: '' },

@@ -57,26 +57,34 @@ async function fetchFreshExternalEvents(city) {
     `upcoming events in ${safeCity}`,
     `${safeCity} event calendar`,
   ];
+  const queryResults = await Promise.allSettled(
+    queryVariants.map(async (query) => {
+      const url = new URL('https://serpapi.com/search.json');
+      url.searchParams.set('engine', 'google');
+      url.searchParams.set('q', query);
+      url.searchParams.set('hl', 'en');
+      url.searchParams.set('gl', 'in');
+      url.searchParams.set('api_key', apiKey);
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      return Array.isArray(data?.events_results) ? data.events_results : [];
+    })
+  );
+
   const allEvents = new Map();
 
-  for (const query of queryVariants) {
-    const url = new URL('https://serpapi.com/search.json');
-    url.searchParams.set('engine', 'google');
-    url.searchParams.set('q', query);
-    url.searchParams.set('hl', 'en');
-    url.searchParams.set('gl', 'in');
-    url.searchParams.set('api_key', apiKey);
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
+  for (const result of queryResults) {
+    if (result.status !== 'fulfilled' || !Array.isArray(result.value)) {
       continue;
     }
 
-    const data = await response.json();
-    const events = Array.isArray(data?.events_results) ? data.events_results : [];
-
-    for (const event of events) {
+    for (const event of result.value) {
       const title = String(event.title || '').trim();
       const normalizedTitle = title.toLowerCase().replace(/\s+/g, ' ');
 

@@ -2,26 +2,38 @@ import Post from '../models/postModel.js';
 import Connection from '../models/connectionModel.js';
 import User from '../models/userModel.js';
 
-function normalizePostDisplay(post) {
+async function normalizePostDisplay(post) {
   if (!post) return post;
 
   const rawCreator = post.creatorId || post.creator;
-  if (post.creatorName) {
-    post.creator = post.creatorName;
-    return post;
-  }
+  let user = null;
 
   if (rawCreator && /^[a-fA-F0-9]{24}$/.test(String(rawCreator))) {
-    return User.findById(rawCreator).then((user) => {
-      if (user) {
-        post.creatorName = user.name;
-        post.creator = user.name;
-      }
-      return post;
-    });
+    user = await User.findById(rawCreator).select('name profileImage').lean();
   }
 
-  return Promise.resolve(post);
+  if (!user && rawCreator) {
+    user = await User.findOne({
+      $or: [
+        { firebaseUid: String(rawCreator) },
+        { name: String(rawCreator) },
+        { email: String(rawCreator).toLowerCase() },
+      ],
+    }).select('name profileImage').lean();
+  }
+
+  if (user) {
+    post.creatorId = post.creatorId || user._id.toString();
+    post.creatorName = user.name || post.creatorName || user.email?.split('@')[0];
+    post.creator = post.creatorName;
+    post.creatorAvatar = user.profileImage || post.creatorAvatar || '';
+  } else {
+    post.creatorName = post.creatorName || post.creator || 'Community Member';
+    post.creator = post.creatorName;
+    post.creatorAvatar = post.creatorAvatar || '';
+  }
+
+  return post;
 }
 
 // GET /api/posts
@@ -63,6 +75,7 @@ export async function createPost(req, res, next) {
   try {
     const userId = req.user?.id || req.body.creatorId;
     const creatorName = req.user?.name || req.body.creatorName || 'Community Member';
+    const creatorAvatar = req.user?.profileImage || '';
     if (!userId) return res.status(401).json({ success: false, message: 'Authentication required.' });
 
     const payload = {
@@ -70,6 +83,7 @@ export async function createPost(req, res, next) {
       creator: creatorName,
       creatorId: userId,
       creatorName,
+      creatorAvatar,
     };
 
     delete payload._id;
